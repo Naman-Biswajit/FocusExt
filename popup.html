@@ -2,52 +2,30 @@
 <html>
 <head>
   <style>
-    body {
-      width: 220px;
-      padding: 20px;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      text-align: center;
-      background-color: #f4f4f4;
-    }
-    h2 {
-      margin-top: 0;
-      color: #333;
-      font-size: 18px;
-    }
-    .status {
-      margin-bottom: 20px;
-      font-size: 14px;
-      color: #666;
-    }
+    body { width: 220px; padding: 20px; font-family: sans-serif; text-align: center; background: #f9f9f9; }
+    h2 { margin-top: 0; font-size: 18px; color: #333; }
+    .status { margin-bottom: 15px; font-size: 14px; color: #666; }
     button {
-      padding: 12px 24px;
-      font-size: 16px;
-      cursor: pointer;
-      border: none;
-      border-radius: 6px;
-      transition: background-color 0.3s;
-      width: 100%;
-      color: white;
-      font-weight: bold;
+      padding: 10px; width: 100%; margin-bottom: 10px; cursor: pointer;
+      border: none; border-radius: 5px; font-weight: bold; color: white;
     }
-    .btn-off {
-      background-color: #2196F3; /* Blue */
-    }
-    .btn-off:hover {
-      background-color: #1976D2;
-    }
-    .btn-on {
-      background-color: #F44336; /* Red */
-    }
-    .btn-on:hover {
-      background-color: #D32F2F;
-    }
+    .btn-toggle { transition: 0.3s; }
+    .off { background-color: #2196F3; }
+    .on { background-color: #F44336; }
+    .btn-dash { background-color: #4CAF50; color: white; } /* Green */
+    hr { border: 0; border-top: 1px solid #ddd; margin: 15px 0; }
   </style>
 </head>
 <body>
   <h2>Focus Controller</h2>
   <div class="status" id="statusText">Mode is OFF</div>
-  <button id="toggleBtn" class="btn-off">Turn ON</button>
+  
+  <button id="toggleBtn" class="btn-toggle off">Turn ON Focus</button>
+  
+  <hr>
+  
+  <button id="openTrackerBtn" class="btn-dash">Open Task Tracker</button>
+
   <script src="popup.js"></script>
 </body>
 </html>

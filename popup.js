@@ -1,13 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('toggleBtn');
   const statusText = document.getElementById('statusText');
+  const trackerBtn = document.getElementById('openTrackerBtn');
 
-  // Load current state
+  // Open the Tracker Dashboard in a new tab
+  trackerBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'tracker.html' });
+  });
+
   chrome.storage.local.get(['focusMode'], (result) => {
     updateUI(result.focusMode);
   });
-
-  // Handle click
+  
+  // Handle Click
   btn.addEventListener('click', () => {
     chrome.storage.local.get(['focusMode'], (result) => {
       const newState = !result.focusMode;
@@ -18,14 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateUI(isFocusOn) {
     if (isFocusOn) {
-      btn.textContent = 'Turn OFF';
-      btn.className = 'btn-on';
-      statusText.textContent = 'Focus Mode is ACTIVE';
+      btn.textContent = 'Turn Focus OFF';
+      btn.className = 'btn-toggle on';
+      statusText.textContent = 'Focus ACTIVE';
       statusText.style.color = '#F44336';
     } else {
-      btn.textContent = 'Turn ON';
-      btn.className = 'btn-off';
-      statusText.textContent = 'Focus Mode is OFF';
+      btn.textContent = 'Turn Focus ON';
+      btn.className = 'btn-toggle off';
+      statusText.textContent = 'Focus OFF';
       statusText.style.color = '#666';
     }
   }

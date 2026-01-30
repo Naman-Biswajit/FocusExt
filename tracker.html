@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Tracker & History</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; background: #f4f4f4; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    h2, h3 { margin-top: 0; color: #333; }
+    
+    /* Input Section */
+    .input-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+    input[type="text"], textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    .radio-group label { display: inline; margin-right: 15px; font-weight: normal; }
+    
+    /* Timer Display */
+    #timerDisplay { font-size: 48px; font-weight: bold; text-align: center; margin: 20px 0; color: #2196F3; }
+    
+    /* Buttons */
+    button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; color: white; }
+    .btn-start { background-color: #2196F3; width: 100%; }
+    .btn-stop { background-color: #F44336; width: 100%; display: none; }
+    
+    /* Stats & History */
+    .stats-row { display: flex; justify-content: space-between; margin-bottom: 20px; background: #eee; padding: 15px; border-radius: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+    th { background-color: #f8f8f8; }
+    .tag-task { color: #2196F3; font-weight: bold; }
+    .tag-break { color: #FF9800; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <!-- ACTIVE TIMER SECTION -->
+  <div class="card" id="activeSection">
+    <h2>Current Activity</h2>
+    
+    <!-- Inputs (Hidden when timer running) -->
+    <div id="setupForm">
+      <div class="input-group">
+        <label>Activity Name</label>
+        <input type="text" id="taskName" placeholder="e.g., Coding, Reading, Lunch">
+      </div>
+      <div class="input-group">
+        <label>Description (Optional)</label>
+        <textarea id="taskDesc" rows="2" placeholder="Details..."></textarea>
+      </div>
+      <div class="input-group radio-group">
+        <label>Type:</label>
+        <input type="radio" name="taskType" value="Task" checked> Task
+        <input type="radio" name="taskType" value="Break"> Break
+      </div>
+      <button id="startBtn" class="btn-start">Start Timer</button>
+    </div>
+
+    <!-- Timer Running View -->
+    <div id="runningView" style="display:none;">
+      <h3 id="runningTaskName">Task Name</h3>
+      <p id="runningTaskDesc" style="color:#666;"></p>
+      <div id="timerDisplay">00:00:00</div>
+      <button id="stopBtn" class="btn-stop" style="display:inline-block;">Stop & Save</button>
+    </div>
+  </div>
+
+  <!-- DAILY SUMMARY SECTION -->
+  <div class="card">
+    <h2>Daily Summary (<span id="dateDisplay"></span>)</h2>
+    
+    <div class="stats-row">
+      <div><strong>Total Work:</strong> <span id="totalWork">0m</span></div>
+      <div><strong>Total Break:</strong> <span id="totalBreak">0m</span></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Duration</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody id="historyList">
+        <!-- Rows will be injected here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script src="tracker.js"></script>
+</body>
+</html>

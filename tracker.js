@@ -22,11 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
   checkRunningTask();
 });
 
-// 1. Start Timer
+// 1. Start Timer (Modified for Auto-Focus)
 startBtn.addEventListener('click', () => {
   const name = taskNameInput.value.trim() || 'Untitled';
   const desc = taskDescInput.value.trim();
-  const type = document.querySelector('input[name="taskType"]:checked').value; // 'Task' or 'Break'
+  // Get selected type: 'Task' or 'Break'
+  const type = document.querySelector('input[name="taskType"]:checked').value;
 
   const currentTask = {
     name,
@@ -36,11 +37,17 @@ startBtn.addEventListener('click', () => {
   };
 
   chrome.storage.local.set({ currentTask }, () => {
+    if (type === 'Task') {
+      chrome.storage.local.set({ focusMode: true });
+    } else {
+      chrome.storage.local.set({ focusMode: false });
+    }
+
     checkRunningTask();
   });
 });
 
-// 2. Stop Timer
+// 2. Stop Timer (Modified for Auto-Focus)
 stopBtn.addEventListener('click', () => {
   chrome.storage.local.get(['currentTask', 'history'], (result) => {
     const task = result.currentTask;
@@ -67,6 +74,11 @@ stopBtn.addEventListener('click', () => {
 
     // Clear current task and save history
     chrome.storage.local.set({ currentTask: null, history }, () => {
+      // --- AUTOMATION LOGIC ---
+      // When task stops, disable Focus Mode (return to normal)
+      chrome.storage.local.set({ focusMode: false });
+      // ------------------------
+
       clearInterval(timerInterval);
       checkRunningTask(); // UI update
       loadHistory();      // Update table

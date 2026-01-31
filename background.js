@@ -26,3 +26,31 @@ function updateBlockingRules(enable) {
     });
   }
 }
+
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {    
+    if (changeInfo.url) {
+        const url = changeInfo.url;
+
+        if (url.includes("youtube.com/shorts/")) {
+            
+            console.log("Shorts detected in background. Redirecting...");
+
+            const match = url.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+
+            if (match && match[1]) {
+                const videoId = match[1];
+                
+                const urlObj = new URL(url);
+                const timeParam = urlObj.searchParams.get("t");
+                let newUrl = `https://www.youtube.com/watch?v=${videoId}`;
+                
+                if (timeParam) {
+                    newUrl += `&t=${timeParam}`;
+                }
+
+                chrome.tabs.update(tabId, { url: newUrl });
+            }
+        }
+    }
+});

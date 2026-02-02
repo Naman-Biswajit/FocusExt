@@ -28,6 +28,13 @@
     th { background-color: #f8f8f8; }
     .tag-task { color: #2196F3; font-weight: bold; }
     .tag-break { color: #FF9800; font-weight: bold; }
+
+    /* Archive*/
+    details { border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; background: #fff; }
+    summary { padding: 10px; cursor: pointer; background-color: #f9f9f9; font-weight: bold; outline: none; display: flex; justify-content: space-between; align-items: center; }
+    summary:hover { background-color: #f1f1f1; }
+    .archive-content { padding: 10px; }
+    .summary-stats { font-weight: normal; font-size: 0.9em; color: #666; }
   </style>
 </head>
 <body>
@@ -36,7 +43,6 @@
   <div class="card" id="activeSection">
     <h2>Current Activity</h2>
     
-    <!-- Inputs (Hidden when timer running) -->
     <div id="setupForm">
       <div class="input-group">
         <label>Activity Name</label>
@@ -54,7 +60,6 @@
       <button id="startBtn" class="btn-start">Start Timer</button>
     </div>
 
-    <!-- Timer Running View -->
     <div id="runningView" style="display:none;">
       <h3 id="runningTaskName">Task Name</h3>
       <p id="runningTaskDesc" style="color:#666;"></p>
@@ -63,7 +68,7 @@
     </div>
   </div>
 
-  <!-- DAILY SUMMARY SECTION -->
+  <!-- Today's Summary -->
   <div class="card">
     <h2>Daily Summary (<span id="dateDisplay"></span>)</h2>
     
@@ -83,9 +88,17 @@
         </tr>
       </thead>
       <tbody id="historyList">
-        <!-- Rows will be injected here -->
+        <!-- injection -->
       </tbody>
     </table>
+  </div>
+
+  <!--HISTORY-->
+  <div class="card">
+    <h2>History Archives</h2>
+    <p style="font-size:0.9em; color:#666; margin-bottom:15px;">Click a date to view past tasks.</p>
+    <div id="archiveContainer">
+    </div>
   </div>
 
   <script src="tracker.js"></script>

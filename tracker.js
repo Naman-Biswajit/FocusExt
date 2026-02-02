@@ -8,25 +8,26 @@ const stopBtn = document.getElementById('stopBtn');
 const timerDisplay = document.getElementById('timerDisplay');
 const runningName = document.getElementById('runningTaskName');
 const runningDesc = document.getElementById('runningTaskDesc');
-const historyList = document.getElementById('historyList');
+const historyList = document.getElementById('historyList'); // Today's table
 const dateDisplay = document.getElementById('dateDisplay');
 const totalWorkEl = document.getElementById('totalWork');
 const totalBreakEl = document.getElementById('totalBreak');
+const archiveContainer = document.getElementById('archiveContainer'); // New container
 
 let timerInterval = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  dateDisplay.textContent = new Date().toLocaleDateString();
-  loadHistory();
+  dateDisplay.textContent = new Date().toLocaleDateString('en-GB');
+  loadHistory();     // Load today
+  loadArchives();    // Load previous days
   checkRunningTask();
 });
 
-// 1. Start Timer (Modified for Auto-Focus)
+// 1. Start Timer
 startBtn.addEventListener('click', () => {
   const name = taskNameInput.value.trim() || 'Untitled';
   const desc = taskDescInput.value.trim();
-  // Get selected type: 'Task' or 'Break'
   const type = document.querySelector('input[name="taskType"]:checked').value;
 
   const currentTask = {
@@ -42,12 +43,11 @@ startBtn.addEventListener('click', () => {
     } else {
       chrome.storage.local.set({ focusMode: false });
     }
-
     checkRunningTask();
   });
 });
 
-// 2. Stop Timer (Modified for Auto-Focus)
+// 2. Stop Timer
 stopBtn.addEventListener('click', () => {
   chrome.storage.local.get(['currentTask', 'history'], (result) => {
     const task = result.currentTask;
@@ -56,15 +56,14 @@ stopBtn.addEventListener('click', () => {
     const endTime = Date.now();
     const durationMs = endTime - task.startTime;
 
-    // Create record
     const record = {
       ...task,
       endTime,
       durationMs
     };
 
-    // Save to History (Organized by Date)
-    const todayKey = new Date().toLocaleDateString();
+    // Save to History 
+    const todayKey = new Date().toLocaleDateString('en-GB');
     const history = result.history || {};
     
     if (!history[todayKey]) {
@@ -72,16 +71,12 @@ stopBtn.addEventListener('click', () => {
     }
     history[todayKey].push(record);
 
-    // Clear current task and save history
     chrome.storage.local.set({ currentTask: null, history }, () => {
-      // --- AUTOMATION LOGIC ---
-      // When task stops, disable Focus Mode (return to normal)
       chrome.storage.local.set({ focusMode: false });
-      // ------------------------
 
       clearInterval(timerInterval);
-      checkRunningTask(); // UI update
-      loadHistory();      // Update table
+      checkRunningTask(); 
+      loadHistory(); // Update 
     });
   });
 });
@@ -90,14 +85,12 @@ stopBtn.addEventListener('click', () => {
 function checkRunningTask() {
   chrome.storage.local.get(['currentTask'], (result) => {
     if (result.currentTask) {
-      // Show Timer View
       setupForm.style.display = 'none';
       runningView.style.display = 'block';
       
       runningName.textContent = result.currentTask.type + ": " + result.currentTask.name;
       runningDesc.textContent = result.currentTask.desc;
 
-      // Start ticking
       if (timerInterval) clearInterval(timerInterval);
       updateTimerDisplay(result.currentTask.startTime);
       timerInterval = setInterval(() => {
@@ -105,7 +98,6 @@ function checkRunningTask() {
       }, 1000);
 
     } else {
-      // Show Input View
       setupForm.style.display = 'block';
       runningView.style.display = 'none';
       clearInterval(timerInterval);
@@ -120,46 +112,141 @@ function updateTimerDisplay(startTime) {
   timerDisplay.textContent = formatDuration(diff);
 }
 
-// 4. Load History & Stats
+// 4. Load History (TODAY)
 function loadHistory() {
-  const todayKey = new Date().toLocaleDateString();
+  const todayKey = new Date().toLocaleDateString('en-GB');
 
   chrome.storage.local.get(['history'], (result) => {
     const history = result.history || {};
     const todaysRecords = history[todayKey] || [];
 
-    historyList.innerHTML = ''; // Clear table
+    const stats = calculateDailyStats(todaysRecords);
+    
+    totalWorkEl.textContent = formatDuration(stats.workMs, true);
+    totalBreakEl.textContent = formatDuration(stats.breakMs, true);
 
-    let workMs = 0;
-    let breakMs = 0;
-
-    // Sort by latest first
-    todaysRecords.slice().reverse().forEach(item => {
-      const row = document.createElement('tr');
-      
-      // Calculate totals
-      if (item.type === 'Task') workMs += item.durationMs;
-      else breakMs += item.durationMs;
-
-      // Format time of day
-      const timeStr = new Date(item.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      row.innerHTML = `
-        <td class="${item.type === 'Task' ? 'tag-task' : 'tag-break'}">${item.type}</td>
-        <td>${item.name}</td>
-        <td style="color:#666; font-size:0.9em;">${item.desc}</td>
-        <td>${formatDuration(item.durationMs)}</td>
-        <td>${timeStr}</td>
-      `;
-      historyList.appendChild(row);
-    });
-
-    totalWorkEl.textContent = formatDuration(workMs, true);
-    totalBreakEl.textContent = formatDuration(breakMs, true);
+    historyList.innerHTML = '';
+    const rows = renderHistoryRows(todaysRecords);
+    rows.forEach(row => historyList.appendChild(row));
   });
 }
 
-// Helper: Format ms to HH:MM:SS or Xh Ym
+// 5. Load Archives
+function loadArchives() {
+  const todayKey = new Date().toLocaleDateString('en-GB');
+
+  chrome.storage.local.get(['history'], (result) => {
+    const history = result.history || {};
+    archiveContainer.innerHTML = '';
+
+    const dates = Object.keys(history);
+
+    // Sort: This handles the mix of formats reasonably well for now
+    dates.sort((a, b) => {
+      // Helper to pad single digits for sorting comparisons
+      const standardA = a.split('/').map(p => p.padStart(2, '0')).reverse().join('');
+      const standardB = b.split('/').map(p => p.padStart(2, '0')).reverse().join('');
+      return standardB.localeCompare(standardA);
+    });
+
+    dates.forEach(dateKey => {
+      // Skip today
+      if (dateKey === todayKey) return;
+
+      const records = history[dateKey];
+      const stats = calculateDailyStats(records);
+
+      // --- FIX STARTS HERE ---
+      // Determine Display Date:
+      // If dateKey is old format (e.g., "2/2/2026"), JS can parse it.
+      // If dateKey is new UK format (e.g., "28/01/2026"), JS usually fails to parse "28" as a month.
+      let displayDate = dateKey;
+      
+      const testDate = new Date(dateKey);
+      // If it is a valid date (meaning it was saved in the old US-compatible format)
+      // AND it doesn't look like the new format (to avoid swapping days/months ambiguously)
+      if (!isNaN(testDate.getTime()) && dateKey.indexOf('/') < 3) {
+         displayDate = testDate.toLocaleDateString('en-GB');
+      }
+      // --- FIX ENDS HERE ---
+
+      const details = document.createElement('details');
+      const summary = document.createElement('summary');
+      
+      summary.innerHTML = `
+        <span>${displayDate}</span>
+        <span class="summary-stats">
+          Work: ${formatDuration(stats.workMs, true)} | Break: ${formatDuration(stats.breakMs, true)}
+        </span>
+      `;
+
+      // Inner Content (Table)
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'archive-content';
+      
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Desc</th>
+            <th>Duration</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+      `;
+      
+      const tbody = document.createElement('tbody');
+      const rows = renderHistoryRows(records);
+      rows.forEach(row => tbody.appendChild(row));
+      
+      table.appendChild(tbody);
+      contentDiv.appendChild(table);
+      details.appendChild(summary);
+      details.appendChild(contentDiv);
+
+      archiveContainer.appendChild(details);
+    });
+
+    if (archiveContainer.innerHTML === '') {
+      archiveContainer.innerHTML = '<p style="text-align:center; color:#999;">No previous history found.</p>';
+    }
+  });
+}
+
+
+function calculateDailyStats(records) {
+  let workMs = 0;
+  let breakMs = 0;
+  records.forEach(item => {
+    if (item.type === 'Task') workMs += item.durationMs;
+    else breakMs += item.durationMs;
+  });
+  return { workMs, breakMs };
+}
+
+
+function renderHistoryRows(records) {
+  const rows = [];
+  // Sort by latest first
+  records.slice().reverse().forEach(item => {
+    const row = document.createElement('tr');
+    const timeStr = new Date(item.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    row.innerHTML = `
+      <td class="${item.type === 'Task' ? 'tag-task' : 'tag-break'}">${item.type}</td>
+      <td>${item.name}</td>
+      <td style="color:#666; font-size:0.9em;">${item.desc}</td>
+      <td>${formatDuration(item.durationMs)}</td>
+      <td>${timeStr}</td>
+    `;
+    rows.push(row);
+  });
+  return rows;
+}
+
+
 function formatDuration(ms, simple = false) {
   const totalSeconds = Math.floor(ms / 1000);
   const h = Math.floor(totalSeconds / 3600);

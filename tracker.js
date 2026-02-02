@@ -141,12 +141,34 @@ function loadArchives() {
 
     const dates = Object.keys(history);
 
-    // Sort: This handles the mix of formats reasonably well for now
+    // SORTING LOGIC: Newest First
     dates.sort((a, b) => {
-      // Helper to pad single digits for sorting comparisons
-      const standardA = a.split('/').map(p => p.padStart(2, '0')).reverse().join('');
-      const standardB = b.split('/').map(p => p.padStart(2, '0')).reverse().join('');
-      return standardB.localeCompare(standardA);
+      const getSortableValue = (dateStr) => {
+        const parts = dateStr.split('/');
+        let day, month, year;
+
+        // Logic to handle both old (M/D/Y) and new (D/M/Y) formats
+        if (parseInt(parts[0]) > 12) {
+          // Definitely New Format: DD/MM/YYYY
+          day = parts[0].padStart(2, '0');
+          month = parts[1].padStart(2, '0');
+          year = parts[2];
+        } else if (parseInt(parts[1]) > 12) {
+          // Definitely Old Format: MM/DD/YYYY
+          month = parts[0].padStart(2, '0');
+          day = parts[1].padStart(2, '0');
+          year = parts[2];
+        } else {
+          // Ambiguous (both < 12), assume new format DD/MM/YYYY
+          day = parts[0].padStart(2, '0');
+          month = parts[1].padStart(2, '0');
+          year = parts[2];
+        }
+        return year + month + day; // Result: "20260201"
+      };
+
+      // Sort descending (Newest Value > Oldest Value)
+      return getSortableValue(b).localeCompare(getSortableValue(a));
     });
 
     dates.forEach(dateKey => {
@@ -156,19 +178,13 @@ function loadArchives() {
       const records = history[dateKey];
       const stats = calculateDailyStats(records);
 
-      // --- FIX STARTS HERE ---
-      // Determine Display Date:
-      // If dateKey is old format (e.g., "2/2/2026"), JS can parse it.
-      // If dateKey is new UK format (e.g., "28/01/2026"), JS usually fails to parse "28" as a month.
+      // Display logic: Ensure old keys are shown as DD/MM/YYYY
       let displayDate = dateKey;
-      
       const testDate = new Date(dateKey);
-      // If it is a valid date (meaning it was saved in the old US-compatible format)
-      // AND it doesn't look like the new format (to avoid swapping days/months ambiguously)
+      // If it's a valid old-format date, convert for display
       if (!isNaN(testDate.getTime()) && dateKey.indexOf('/') < 3) {
          displayDate = testDate.toLocaleDateString('en-GB');
       }
-      // --- FIX ENDS HERE ---
 
       const details = document.createElement('details');
       const summary = document.createElement('summary');
@@ -180,7 +196,6 @@ function loadArchives() {
         </span>
       `;
 
-      // Inner Content (Table)
       const contentDiv = document.createElement('div');
       contentDiv.className = 'archive-content';
       
